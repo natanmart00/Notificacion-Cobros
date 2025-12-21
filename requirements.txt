@@ -1,0 +1,4 @@
+gspread==6.2.1
+google-auth==2.41.1
+python-dotenv==1.2.1
+selenium==4.39.0
