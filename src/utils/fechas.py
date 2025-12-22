@@ -13,11 +13,15 @@ class UtilidadesFecha:
 
     @staticmethod
     def siguiente_mes(yyyy_mm: str) -> str:
+        if not yyyy_mm:
+            raise ValueError("La fecha no puede ser None o vacía")
+
         anio, mes = map(int, yyyy_mm.split("-"))
+
         if mes == 12:
             return f"{anio + 1}-01"
         return f"{anio}-{mes + 1:02d}"
-
+    
     @staticmethod
     def meses_entre(mes_inicial: str, mes_final: str) -> list[str]:
         """
