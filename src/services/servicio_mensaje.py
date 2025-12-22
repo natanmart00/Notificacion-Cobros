@@ -48,25 +48,29 @@ class ServicioMensaje:
                     "s_id": sub["servicio_id"],
                     "monto": monto
                 })
-
+                
         # 3. Construir el mensaje
-        lineas = ["* RESUMEN GLOBAL DE CUENTAS*\n"]
+        lineas = ["*🔔 RESUMEN GLOBAL DE CUENTAS*\n"]
         hay_deuda_general = False
 
-        for u_id in sorted(cargos_globales.keys()):
+        # Combinamos las llaves de cargos y pagos
+        todos_los_usuarios_con_actividad = set(cargos_globales.keys()) | set(pagos_globales.keys())
+
+        for u_id in sorted(todos_los_usuarios_con_actividad):
             usuario_data = usuarios_map.get(u_id)
             if not usuario_data: continue
             
             nombre_usuario = usuario_data["nombre"]
-            # Ordenamos TODOS los cargos del usuario por mes cronológicamente
-            todos_los_cargos = sorted(cargos_globales[u_id], key=lambda x: x["mes"])
-            saldo_pagos = pagos_globales[u_id]
+            # Si no tiene cargos, usamos una lista vacía para que el bucle no falle
+            lista_cargos_usuario = cargos_globales.get(u_id, [])
+            todos_los_cargos = sorted(lista_cargos_usuario, key=lambda x: x["mes"])
             
-            # Aquí guardaremos la deuda final ya procesada
-            # estructura: deuda_final[nombre_servicio] = [lineas de texto]
+            saldo_pagos = pagos_globales.get(u_id, 0.0)
+            
             deuda_final_por_servicio = defaultdict(list)
             total_usuario = 0
 
+            # Procesar cargos (si existen)
             for cargo in todos_los_cargos:
                 monto_cargo = cargo["monto"]
                 nombre_srv = servicios_map.get(cargo["s_id"], {}).get("nombre", "Servicio")
@@ -91,18 +95,17 @@ class ServicioMensaje:
             if deuda_final_por_servicio:
                 hay_deuda_general = True
                 lineas.append(f"👤 {nombre_usuario.upper()}")
-                
                 for srv_nombre, detalles in deuda_final_por_servicio.items():
                     lineas.append(f"   *{srv_nombre}*")
                     lineas.extend(detalles)
-                
                 lineas.append(f"  *TOTAL DEUDA: ${total_usuario:.2f}*")
                 lineas.append("") 
             
+            # Si no hay deuda pero sobró dinero (saldo a favor)
             elif saldo_pagos > 0:
                 hay_deuda_general = True
                 lineas.append(f"👤 {nombre_usuario.upper()}")
-                lineas.append(f"   Saldo a favor global: ${saldo_pagos:.2f}")
+                lineas.append(f"    Saldo a favor global: ${saldo_pagos:.2f}")
                 lineas.append("")
 
         return "\n".join(lineas) if hay_deuda_general else "✔ Todos los saldos están al día."
