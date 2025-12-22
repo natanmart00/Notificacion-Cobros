@@ -1,9 +1,9 @@
 from datetime import date
-from sheets.tablas.tabla_suscripciones import SuscripcionesRepositorio
-from sheets.tablas.tabla_servicios import ServiciosRepositorio
-from sheets.tablas.tabla_movimientos import MovimientosRepositorio
-from sheets.tablas.tabla_control import ControlRepositorio
-from utils.fechas import UtilidadesFecha
+from src.sheets.tablas.tabla_suscripciones import SuscripcionesRepositorio
+from src.sheets.tablas.tabla_servicios import ServiciosRepositorio
+from src.sheets.tablas.tabla_movimientos import MovimientosRepositorio
+from src.sheets.tablas.tabla_control import ControlRepositorio
+from src.utils.fechas import UtilidadesFecha
 
 
 class ServicioFacturacion:
@@ -18,27 +18,34 @@ class ServicioFacturacion:
         self.control_repo = ControlRepositorio()
 
     def generar_cargos_retroactivos(self):
+        mes_inicial = self.control_repo.obtener_mes_inicial()
+        mes_actual = self.control_repo.obtener_mes_actual()
         ultimo_mes = self.control_repo.obtener_valor("ultimo_mes_facturado")
-        mes_actual = UtilidadesFecha.mes_actual()
 
-        meses_pendientes = UtilidadesFecha.meses_entre(
-            ultimo_mes, mes_actual
-        )
+        desde = ultimo_mes if ultimo_mes else mes_inicial
+        meses_pendientes = UtilidadesFecha.meses_entre(desde, mes_actual)
 
         if not meses_pendientes:
-            return
+            return [] 
 
-        servicios = self.servicios_repo.obtener_todos()
+        # 1. Cargamos TODOS los servicios y suscripciones
+        servicios = self.servicios_repo.obtener_todos() # Devuelve dict {id: datos}
         suscripciones = self.suscripciones_repo.obtener_activas()
 
         filas = []
-
         for mes in meses_pendientes:
             for sub in suscripciones:
-                servicio = servicios[sub["servicio_id"]]
+                # Obtenemos los datos del servicio relacionado
+                servicio = servicios.get(sub["servicio_id"])
+                
+                # VALIDACIÓN CRUCIAL:
+                # Solo generamos cargo si el servicio existe Y está activo
+                # (La suscripción ya viene filtrada por 'obtener_activas')
+                if not servicio or not servicio.get("activa"):
+                    continue
 
                 filas.append([
-                    "",  # movimiento_id (lógico)
+                    "", 
                     date.today().isoformat(),
                     mes,
                     sub["suscripcion_id"],
@@ -47,8 +54,8 @@ class ServicioFacturacion:
                     "SCRIPT"
                 ])
 
-        self.movimientos_repo.insertar_cargos(filas)
-        self.control_repo.actualizar_valor(
-            "ultimo_mes_facturado",
-            meses_pendientes[-1]
-        )
+        if filas:
+            self.movimientos_repo.insertar_cargos(filas)
+            self.control_repo.actualizar_valor("ultimo_mes_facturado", meses_pendientes[-1])
+
+        return filas

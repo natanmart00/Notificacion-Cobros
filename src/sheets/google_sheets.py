@@ -1,26 +1,27 @@
-import os
 import gspread
 from google.oauth2.service_account import Credentials
+from src.config.settings import Settings
 
 
 class ClienteGoogleSheets:
     """
-    Cliente centralizado para acceder a Google Sheets
+    Cliente centralizado para Google Sheets.
     """
 
-    SCOPES = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-
     def __init__(self):
+        ruta_credenciales = Settings.ruta("GOOGLE_CREDENTIALS_PATH")
+
         credenciales = Credentials.from_service_account_file(
-            os.getenv("GOOGLE_CREDENTIALS_PATH"),
-            scopes=self.SCOPES
+            ruta_credenciales,
+            scopes=[
+                "https://www.googleapis.com/auth/spreadsheets",
+                "https://www.googleapis.com/auth/drive"
+            ]
         )
+
         self.cliente = gspread.authorize(credenciales)
         self.spreadsheet = self.cliente.open_by_key(
-            os.getenv("SPREADSHEET_ID")
+            Settings.valor("SPREADSHEET_ID")
         )
 
     def obtener_hoja(self, nombre_hoja: str):
