@@ -22,7 +22,7 @@ class ServicioFacturacion:
         mes_actual = self.control_repo.obtener_mes_actual()
         ultimo_mes = self.control_repo.obtener_valor("ultimo_mes_facturado")
 
-        desde = ultimo_mes if ultimo_mes else mes_inicial
+        desde = ultimo_mes or mes_inicial or mes_actual
         meses_pendientes = UtilidadesFecha.meses_entre(desde, mes_actual)
 
         if not meses_pendientes:
