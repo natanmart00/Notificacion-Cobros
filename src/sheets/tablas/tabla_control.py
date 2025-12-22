@@ -1,4 +1,5 @@
 from src.sheets.google_sheets import ClienteGoogleSheets
+from datetime import date
 
 class ControlRepositorio:
     """
@@ -27,7 +28,8 @@ class ControlRepositorio:
         return self.obtener_valor("mes_inicial")
 
     def obtener_mes_actual(self):
-        return self.obtener_valor("mes_actual")
+        mes_actual = self.obtener_valor("mes_actual") or date.today().strftime("%Y-%m")
+        return mes_actual
 
     def actualizar_valor(self, clave: str, nuevo_valor: str):
         """
