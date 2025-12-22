@@ -1,4 +1,4 @@
-from sheets.google_sheets import ClienteGoogleSheets
+from src.sheets.google_sheets import ClienteGoogleSheets
 
 
 class ServiciosRepositorio:
@@ -9,9 +9,13 @@ class ServiciosRepositorio:
     def __init__(self):
         self.ws = ClienteGoogleSheets().obtener_hoja("servicios")
 
-    def obtener_todos(self) -> dict:
+    def obtener_todos(self) -> dict[int, dict]:
         """
-        Devuelve servicios indexados por servicio_id
+        Devuelve un diccionario indexado por servicio_id
+        {
+            servicio_id: {datos del servicio}
+        }
         """
+
         registros = self.ws.get_all_records()
         return {r["servicio_id"]: r for r in registros}
