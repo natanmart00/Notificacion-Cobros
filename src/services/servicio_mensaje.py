@@ -3,6 +3,7 @@ from src.sheets.tablas.tabla_usuarios import Usuarios
 from src.sheets.tablas.tabla_suscripciones import SuscripcionesRepositorio
 from src.sheets.tablas.tabla_servicios import ServiciosRepositorio
 from src.sheets.tablas.tabla_movimientos import MovimientosRepositorio
+from src.sheets.tablas.tabla_dashboard import Dashboard
 
 class ServicioMensaje:
     def __init__(self):
@@ -10,6 +11,7 @@ class ServicioMensaje:
         self.movimientos_repo = MovimientosRepositorio()
         self.suscripciones_repo = SuscripcionesRepositorio()
         self.servicios_repo = ServiciosRepositorio()
+        self.dashboard_repo = Dashboard()
         
     def formatear_monto(self, valor):
         if valor == "" or valor is None: return 0.0
@@ -56,6 +58,9 @@ class ServicioMensaje:
         # Combinamos las llaves de cargos y pagos
         todos_los_usuarios_con_actividad = set(cargos_globales.keys()) | set(pagos_globales.keys())
 
+        filas_dashboard = []
+
+        
         for u_id in sorted(todos_los_usuarios_con_actividad):
             usuario_data = usuarios_map.get(u_id)
             if not usuario_data: continue
@@ -85,6 +90,14 @@ class ServicioMensaje:
                     monto_pendiente = monto_cargo
 
                 if monto_pendiente > 0:
+                    filas_dashboard.append([
+                        u_id,
+                        nombre_usuario,
+                        nombre_srv,
+                        cargo["mes"],
+                        round(monto_pendiente, 2)
+                    ])
+
                     texto_abono = " (abono)" if monto_pendiente < monto_cargo else ""
                     deuda_final_por_servicio[nombre_srv].append(
                         f"    • {cargo['mes']}: ${monto_pendiente:.2f}{texto_abono}"
@@ -107,5 +120,7 @@ class ServicioMensaje:
                 lineas.append(f"👤 {nombre_usuario.upper()}")
                 lineas.append(f"    Saldo a favor global: ${saldo_pagos:.2f}")
                 lineas.append("")
+                
+        self.dashboard_repo.sobrescribir(filas_dashboard)
 
         return "\n".join(lineas) if hay_deuda_general else "✔ Todos los saldos están al día."
