@@ -50,7 +50,7 @@ class ServicioMensaje:
                 })
                 
         # 3. Construir el mensaje
-        lineas = ["*🔔 RESUMEN GLOBAL DE CUENTAS*\n"]
+        lineas = ["CUENTAS\n"]
         hay_deuda_general = False
 
         # Combinamos las llaves de cargos y pagos

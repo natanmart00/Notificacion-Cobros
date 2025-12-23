@@ -1,29 +1,15 @@
-from dotenv import load_dotenv
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv()
-
-from services.servicio_facturacion import FacturacionService
-from services.servicio_mensaje import MensajeService
-from whatsapp.sender import WhatsAppSender
+from src.services.servicio_mensaje import ServicioMensaje
+from src.services.servicio_notificacion import ServicioNotificacion
+from src.config.settings import Settings   
 
 def main():
-    # 1. Generar cargos (incluye retroactivos)
-    facturacion = FacturacionService()
-    facturacion.generar_cargos_retroactivos()
+    # 1. Construir el mensaje
+    servicio_msj = ServicioMensaje()
+    resumen = servicio_msj.construir_mensaje()
 
-    # 2. Construir mensaje consolidado
-    mensaje_service = MensajeService()
-    mensaje = mensaje_service.construir_mensaje()
-
-    if not mensaje.strip():
-        return
-
-    # 3. Enviar mensaje por WhatsApp
-    sender = WhatsAppSender()
-    sender.enviar_mensaje(mensaje)
-
+    # 2. Si hay algo que reportar, lo enviamos
+    notificador = ServicioNotificacion(Settings.valor("NTFY_TEMA"))
+    notificador.enviar_resumen(resumen)
 
 if __name__ == "__main__":
     main()
