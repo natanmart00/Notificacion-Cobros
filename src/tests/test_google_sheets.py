@@ -14,11 +14,9 @@ def prueba_google_sheets():
 
         # 2. Ejecutar generación de cargos
         print("\n[1/2] Generando cargos retroactivos...")
-        # Nota: Asegúrate que tu método genere una lista de filas 
-        # y que la retorne para poder medir el éxito aquí.
+        
         cargos_generados = facturacion.generar_cargos_retroactivos()
         
-        # Asumiendo que modificaste el servicio para devolver la lista de filas insertadas
         if cargos_generados and len(cargos_generados) > 0:
             print(f"✔ Éxito: Se insertaron {len(cargos_generados)} nuevos cargos en la hoja.")
         else:
@@ -39,7 +37,7 @@ def prueba_google_sheets():
         print("." * 40)
 
     except Exception as e:
-        print("\n❌ ERROR DURANTE LA PRUEBA:")
+        print("\n ERROR DURANTE LA PRUEBA:")
         print(f"Tipo de error: {type(e).__name__}")
         print(f"Detalle: {e}")
         print("\nTraza del error para depuración:")

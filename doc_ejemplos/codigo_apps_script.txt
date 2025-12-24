@@ -1,0 +1,122 @@
+/** actualiza las opciones del formulario de google forms con las opciones 
+en tiempo real de nuestra hoja de calculo*/
+
+function actualizarFormulario() {
+  // Lo encuentras en la URL del formulario: docs.google.com/forms/d/[ESTE-ES-EL-ID]/edit
+  const FORM_ID = '179dD058KJuP0DF3Zuq45zs7_A6r9-sdRsGUiuq6KJF0';
+  
+  // obtiene la hoja de calculo actualmente activa
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  //abre el formulario usando su ID
+  const form = FormApp.openById(FORM_ID);
+  
+  // --- PROCESAR USUARIOS ---
+  //obtiene la hoja de usuarios
+  const hojaUsuarios = ss.getSheetByName('usuarios');
+  //obtiene todos los datos de la hoja usuarios en un array
+  const datosUsuarios = hojaUsuarios.getDataRange().getValues();
+  // elimina la primera fila (encabezados)
+  const listaUsuarios = datosUsuarios.slice(1)
+    //filtra las filas donde la columna 4 sea true (valor) o TRUE (texto)
+    .filter(fila => fila[3] === true || fila[3] === "TRUE") 
+    //transforma cada fila en un string con formato ID-Nombre
+    .map(fila => fila[0] + " - " + fila[1]);
+
+  // --- PROCESAR SERVICIOS ---
+  //hace exactamente lo mismo que el bloque anterior pero con la hoja de servicios
+  const hojaServicios = ss.getSheetByName('servicios');
+  const datosServicios = hojaServicios.getDataRange().getValues();
+  const listaServicios = datosServicios.slice(1)
+    .filter(fila => fila[3] === true || fila[3] === "TRUE")
+    .map(fila => fila[0] + " - " + fila[1]);
+
+  // --- ACTUALIZAR FORMULARIO ---
+  //obtiene todas los elementos (preguntas) del formulario
+  const items = form.getItems();
+  
+  //itera cada elemento del formulario
+  items.forEach(item => {
+    //obtiene el titulo de cada pregunta
+    const titulo = item.getTitle();
+    // si encuentra una pregunta titulada Usuario, la convierte a lista y establece las opciones con ListaUsuarios
+    if (titulo === "Usuario") {
+      item.asListItem().setChoiceValues(listaUsuarios);
+    // hace lo mismo con Servicio
+    } else if (titulo === "Servicio") {
+      item.asListItem().setChoiceValues(listaServicios);
+    }
+  });
+
+  //muestra mensaje de confirmación
+  SpreadsheetApp.getUi().alert("✅ Formulario actualizado correctamente.");
+}
+
+/** Función que se ejecuta automáticamente 
+cuando se envía el formulario*/
+
+// e contiene los datos del envío
+function alEnviarFormulario(e) {
+  //obtiene la hoja actual
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  //obtiene la hoja movimientos
+  const hojaMovimientos = ss.getSheetByName('movimientos');
+  
+  // Asumiendo el orden de tus preguntas: Usuario, Servicio, Monto
+  //obtiene las respuestas del formulario en un objeto clave-valor
+  const respuestas = e.namedValues;
+
+  //extrae los valores de las respuestas
+  const usuarioTexto = respuestas['Usuario'][0];   // "1 - Ander"
+  const servicioTexto = respuestas['Servicio'][0]; // "1 - Youtube"
+  const monto = respuestas['Monto'][0];
+  //crea una fecha actual
+  const fecha = new Date();
+  
+  // extrae los strings de ID-Nombre para devolver solo el numero
+  const usuarioId = parseInt(usuarioTexto.split(" - ")[0]);
+  const servicioId = parseInt(servicioTexto.split(" - ")[0]);
+  
+  //obtiene datos de la hoja suscripciones
+  const hojaSubs = ss.getSheetByName('suscripciones');
+  const datosSubs = hojaSubs.getDataRange().getValues();
+  let subId = "";
+  
+  // recorre las suscripciones saltando el encabezado
+  //busca coincidencia entre usuario_id y servicio_id
+  // cuando encuentra, guarda el ID de suscripcion y sale del bucle
+  for (let i = 1; i < datosSubs.length; i++) {
+    if (parseInt(datosSubs[i][1]) === usuarioId && parseInt(datosSubs[i][2]) === servicioId) {
+      subId = datosSubs[i][0];
+      break;
+    }
+  }
+
+  // agrega una fila a la tbla de movimientos
+  // Estructura: id, fecha, mes (vacío para pagos), sub_id, tipo, monto, origen
+  if (subId !== "") {
+    hojaMovimientos.appendRow([
+      "", // movimiento_id (se puede autogenerar o dejar vacío)
+      Utilities.formatDate(fecha, "GMT-6", "dd/MM/yyyy"),
+      "", // El mes no importa para pagos
+      subId,
+      "PAGO",
+      monto,
+      "FORMULARIO"
+    ]);
+  }
+}
+
+/**
+ * Agrega un menú personalizado en la hoja de cálculo para actualizar manualmente.
+ */
+
+function onOpen() {
+  // obtiene la interfaz de usuario de la hoja
+  const ui = SpreadsheetApp.getUi();
+  // crea un menu personalizado
+  ui.createMenu('🛠️ Automatización')
+    // agrega una opcion que ejecuta actualizarFormulario()
+    .addItem('Sincronizar Formulario', 'actualizarFormulario')
+    // lo muestra en la interfaz
+    .addToUi();
+}
