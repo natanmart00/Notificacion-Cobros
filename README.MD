@@ -132,6 +132,12 @@ NTFY_TEMA=nombre_de_tu_topic
 -   Coloca `credentials.json` en la ruta indicada
 -   Verifica que el archivo `.env` esté correctamente configurado
 
+5.  Crea la hoja de calculo de google sheets tal y como está en el archivo Excel de ejemplo doc_ejemplos/ejemplo_google_sheets.xlsx
+
+6. pega el codigo de doc_ejemplos/codigo_apps_script.txt en el menu extensiones -> Apps Scripts
+
+7. en Apps Scripts ve al menu izquierdo y busca activadores -> agregar activador -> elegir que función ejecutar (selecciona AlEnviarFormulario) -> Tipo de evento(al enviar el formulario) -> Guardar
+
 ------------------------------------------------------------------------
 
 ## Uso
