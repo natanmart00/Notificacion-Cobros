@@ -6,10 +6,12 @@ class ServiciosRepositorio:
     Acceso a la tabla 'servicios'
     """
 
+    #inicializa la conexion
     def __init__(self):
         self.ws = ClienteGoogleSheets().obtener_hoja("servicios")
 
-    def obtener_todos(self) -> dict[int, dict]:
+    #obtiene todos los registros de la tabla
+    def obtener_servicios(self) -> dict[int, dict]:
         """
         Devuelve un diccionario indexado por servicio_id
         {

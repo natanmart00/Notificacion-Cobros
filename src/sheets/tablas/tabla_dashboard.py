@@ -7,6 +7,7 @@ class Dashboard:
     Se sobrescribe completamente en cada ejecución
     """
 
+    #inicializamos los encabezados de la tabla
     HEADERS = [
         "usuario_id",
         "usuario",
@@ -15,18 +16,21 @@ class Dashboard:
         "monto_pendiente"
     ]
 
+    #creamos la conexion a la hoja dashboard
     def __init__(self):
         self.ws = ClienteGoogleSheets().obtener_hoja("dashboard")
 
+    #sobreescribimos la hoja dashboard
     def sobrescribir(self, filas: list[list]):
         """
         Borra la hoja y escribe el estado actual de deudas
         """
+        #limpiamos la hoja
         self.ws.clear()
-
-        if not filas:
-            self.ws.append_row(self.HEADERS)
-            return
-
+        
+        #sobreescribimos los encabezados
         self.ws.append_row(self.HEADERS)
-        self.ws.append_rows(filas, value_input_option="USER_ENTERED")
+        
+        #luego escribir las filas si existen
+        if filas:
+            self.ws.append_rows(filas, value_input_option="USER_ENTERED")

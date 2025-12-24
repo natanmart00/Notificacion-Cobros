@@ -12,10 +12,10 @@ class Settings:
     - Resolver rutas y valores del .env
     """
 
-    # Raíz del proyecto (calculada una sola vez)
+    #raíz del proyecto
     BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-    # Cargar variables de entorno al importar la clase
+    #cargar variables de entorno al importar la clase
     load_dotenv(BASE_DIR / ".env")
 
     @classmethod
@@ -23,6 +23,7 @@ class Settings:
         """
         Obtiene una variable de entorno como string.
         """
+        #se asigna el valor o se lanza error si no está definida
         valor = os.getenv(variable)
         if not valor:
             raise ValueError(f"Variable de entorno '{variable}' no definida")
