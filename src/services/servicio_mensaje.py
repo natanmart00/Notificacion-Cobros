@@ -64,7 +64,7 @@ class ServicioMensaje:
         #Diccionario {id_servicio: {datos_suscripcion}}
         servicios_map = self.servicios_repo.obtener_servicios()
         #lista de todos los movimientos de la tabla movimientos
-        movimientos = self.movimientos_repo.obtener_servicios()
+        movimientos = self.movimientos_repo.obtener_movimientos()
 
         #agrupar todo por Usuario
         """
