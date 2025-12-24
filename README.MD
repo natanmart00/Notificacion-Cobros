@@ -66,10 +66,9 @@ Incluyendo nombres de pestañas y columnas.
 3.  Crea una nueva clave en formato **JSON**
 4.  Descarga el archivo y renómbralo como:
 
-```{=html}
-
 ```
     credentials.json
+```
 
 ------------------------------------------------------------------------
 
@@ -160,10 +159,9 @@ python -m src.main
 -   Confirma que el topic configurado sea correcto
 -   Prueba acceder manualmente a:
 
-```{=html}
-
 ```
     https://ntfy.sh/tu_topic
+```
 
 -   Revisa posibles bloqueos por firewall
 
