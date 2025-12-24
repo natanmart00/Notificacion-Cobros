@@ -67,7 +67,7 @@ Incluyendo nombres de pestañas y columnas.
 4.  Descarga el archivo y renómbralo como:
 
 ```{=html}
-<!-- -->
+
 ```
     credentials.json
 
@@ -112,13 +112,6 @@ Renombra el archivo `.env_ejemplo` a `.env` y completa los valores.
 ``` env
 GOOGLE_CREDENTIALS_PATH=ruta/al/archivo/credentials.json
 SPREADSHEET_ID=id_de_tu_google_sheet
-```
-
-#### Hojas de cálculo (no modificar)
-
-``` env
-COBROS_SHEET_NAME=Cobros
-SERVICIOS_SHEET_NAME=Servicios
 ```
 
 #### ntfy
@@ -168,7 +161,7 @@ python -m src.main
 -   Prueba acceder manualmente a:
 
 ```{=html}
-<!-- -->
+
 ```
     https://ntfy.sh/tu_topic
 
