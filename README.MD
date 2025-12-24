@@ -47,11 +47,11 @@ Incluyendo nombres de pestañas y columnas.
 
 ------------------------------------------------------------------------
 
-### 2. Configuración de la API de Google Sheets
+### 2. Configuración de la API´s de Google
 
 1.  Accede a la Google Cloud Console
 2.  Crea un proyecto nuevo o selecciona uno existente
-3.  Habilita la **Google Sheets API**
+3.  Habilita la **Google Sheets API** y la **Google Drive API**
 4.  Crea una cuenta de servicio desde **APIs y Servicios →
     Credenciales**
 5.  Asigna un nombre (ejemplo: `sheets-automation`)
