@@ -6,7 +6,7 @@ def prueba_tabla_movimientos():
     print("=" * 60)
 
     repo = MovimientosRepositorio()
-    movimientos = repo.obtener_todos()
+    movimientos = repo.obtener_movimientos()
 
     for movimiento in movimientos:
         print(movimiento)

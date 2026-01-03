@@ -39,7 +39,7 @@ class ServicioFacturacion:
             return [] 
 
         #devuelve un diccionario {id: datos}
-        servicios = self.servicios_repo.obtener_todos()
+        servicios = self.servicios_repo.obtener_servicios()
         #devuelve una lista de suscripciones activas
         #retorna:
         """
