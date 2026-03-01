@@ -88,6 +88,8 @@ class ServicioFacturacion:
             #actualiza el ultimo mes facturado en la tabla control
             self.control_repo.actualizar_valor("ultimo_mes_facturado", meses_pendientes[-1])
 
+        print(f"Cargos generados para el mes {mes}")
+
         #retorna las filas generadas
         return filas
     
