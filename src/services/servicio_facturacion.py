@@ -39,7 +39,7 @@ class ServicioFacturacion:
             return [] 
 
         #devuelve un diccionario {id: datos}
-        servicios = self.servicios_repo.obtener_todos()
+        servicios = self.servicios_repo.obtener_servicios()
         #devuelve una lista de suscripciones activas
         #retorna:
         """
@@ -87,6 +87,8 @@ class ServicioFacturacion:
             self.movimientos_repo.insertar_cargos(filas)
             #actualiza el ultimo mes facturado en la tabla control
             self.control_repo.actualizar_valor("ultimo_mes_facturado", meses_pendientes[-1])
+
+        print(f"Cargos generados para el mes {mes}")
 
         #retorna las filas generadas
         return filas
