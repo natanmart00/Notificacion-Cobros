@@ -87,8 +87,9 @@ class ServicioFacturacion:
             self.movimientos_repo.insertar_cargos(filas)
             #actualiza el ultimo mes facturado en la tabla control
             self.control_repo.actualizar_valor("ultimo_mes_facturado", meses_pendientes[-1])
-
-        print(f"Cargos generados para el mes {mes}")
+            print(f"✅ Cargos generados exitosamente hasta el mes: {meses_pendientes[-1]}")
+        else:
+            print("ℹ️ No se generaron nuevos cargos en esta ejecución.")
 
         #retorna las filas generadas
         return filas

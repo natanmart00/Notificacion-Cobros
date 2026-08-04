@@ -1,5 +1,4 @@
 import gspread
-from google.oauth2.service_account import Credentials
 from src.config.settings import Settings
 
 
@@ -14,10 +13,9 @@ class ClienteGoogleSheets:
         ruta_credenciales = Settings.ruta("GOOGLE_CREDENTIALS_PATH")
 
         #crea las credenciales de OAuth2
-        credenciales = Credentials.from_service_account_file(
-            #ruta al archivo json
-            ruta_credenciales,
-            #permisos que solicita la app
+        #inicializa un cliente autorizado con las credenciales
+        self.cliente = gspread.service_account(
+            filename=str(ruta_credenciales),
             scopes=[
                 #leer y modificar hojas de calculo
                 "https://www.googleapis.com/auth/spreadsheets",
@@ -25,9 +23,6 @@ class ClienteGoogleSheets:
                 "https://www.googleapis.com/auth/drive"
             ]
         )
-
-        #iniciializa un cliente autorizado con las credenciales
-        self.cliente = gspread.authorize(credenciales)
         #abre una hoja de calculo especifica
         self.spreadsheet = self.cliente.open_by_key(
             #accede al valor de la hoja de calculo del .env

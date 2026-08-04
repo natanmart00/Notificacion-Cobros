@@ -6,7 +6,7 @@ def prueba_tabla_servicios():
     print("=" * 60)
 
     repo = ServiciosRepositorio()
-    servicios = repo.obtener_todos()
+    servicios = repo.obtener_servicios()
     
     for servicio_id, servicio in servicios.items():
         print(servicio_id,servicio)

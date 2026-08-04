@@ -6,7 +6,7 @@ def prueba_tabla_control():
     print("=" * 60)
 
     repo = ControlRepositorio()
-    parametros = repo._obtener_registros()
+    parametros = repo._obtener_todos_los_registros()
 
     print(parametros)
     print("mes_inicial:", repo.obtener_mes_inicial())

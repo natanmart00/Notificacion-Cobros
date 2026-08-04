@@ -19,4 +19,4 @@ class SuscripcionesRepositorio:
         {'suscripcion_id': 1, 'usuario_id': 1, 'servicio_id': 1, 'activa': 'TRUE'}
         {'suscripcion_id': 2, 'usuario_id': 2, 'servicio_id': 1, 'activa': 'TRUE'}
         """
-        return [r for r in registros if r["activa"]]
+        return [r for r in registros if str(r.get("activa", "")).strip().upper() == "TRUE"]
