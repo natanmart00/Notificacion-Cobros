@@ -50,5 +50,5 @@ class Dashboard:
             #crea el rango donde se escribiran los nuevos datos
             rango_actualizar = f"A2:{letra_columna_final}{num_filas + 1}"
             #escribe los nuevos datos en el rango calculado
-            self.ws.update(rango_actualizar, filas, value_input_option="USER_ENTERED")
+            self.ws.update(values=filas, range_name=rango_actualizar, value_input_option="USER_ENTERED")
             
