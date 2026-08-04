@@ -6,7 +6,7 @@ def prueba_tabla_suscripciones():
     print("=" * 60)
 
     repo = SuscripcionesRepositorio()
-    suscripciones = repo.obtener_activas()
+    suscripciones = repo.obtener_suscripciones_activas()
 
     for suscripcion in suscripciones:
         print(suscripcion)
