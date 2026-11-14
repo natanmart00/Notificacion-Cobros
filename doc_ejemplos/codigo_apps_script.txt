@@ -1,103 +1,112 @@
 /** actualiza las opciones del formulario de google forms con las opciones 
-en tiempo real de nuestra hoja de calculo*/
+en tiempo real de nuestra hoja de calculo */
 
 function actualizarFormulario() {
-  // Lo encuentras en la URL del formulario: docs.google.com/forms/d/[ESTE-ES-EL-ID]/edit
-  const FORM_ID = '179dD058KJuP0DF3Zuq45zs7_A6r9-sdRsGUiuq6KJF0';
+  // lo encuentras en la url del formulario: docs.google.com/forms/d/[este-id]/edit
+  const FORM_ID = "179dD058KJuP0DF3Zuq45zs7_A6r9-sdRsGUiuq6KJF0";
   
   // obtiene la hoja de calculo actualmente activa
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  //abre el formulario usando su ID
+  // abre el formulario usando su id
   const form = FormApp.openById(FORM_ID);
   
-  // --- PROCESAR USUARIOS ---
-  //obtiene la hoja de usuarios
-  const hojaUsuarios = ss.getSheetByName('usuarios');
-  //obtiene todos los datos de la hoja usuarios en un array
+  // negocio: mantener las opciones del formulario alineadas con usuarios activos
+  // framework: los datos en hojas pueden contener encabezados y tipos mixtos
+  // codigo: comparaciones debiles o valores no normalizados omitian registros
+  // resolucion: filtra por valor booleano o texto y mapea en formato "id - nombre"
+  const hojaUsuarios = ss.getSheetByName("usuarios");
   const datosUsuarios = hojaUsuarios.getDataRange().getValues();
-  // elimina la primera fila (encabezados)
   const listaUsuarios = datosUsuarios.slice(1)
-    //filtra las filas donde la columna 4 sea true (valor) o TRUE (texto)
-    .filter(fila => fila[3] === true || fila[3] === "TRUE") 
-    //transforma cada fila en un string con formato ID-Nombre
+    .filter(fila => fila[3] === true || String(fila[3]).trim().toUpperCase() === "TRUE") 
     .map(fila => fila[0] + " - " + fila[1]);
 
-  // --- PROCESAR SERVICIOS ---
-  //hace exactamente lo mismo que el bloque anterior pero con la hoja de servicios
-  const hojaServicios = ss.getSheetByName('servicios');
+  // negocio: mantener las opciones del formulario alineadas con servicios activos
+  // framework: la hoja servicios contiene identificador y estado en cuarta columna
+  // codigo: cadenas con espacios o mayusculas inconsistentes fallaban al filtrar
+  // resolucion: normaliza el valor de la columna a texto en mayusculas para comparar
+  const hojaServicios = ss.getSheetByName("servicios");
   const datosServicios = hojaServicios.getDataRange().getValues();
   const listaServicios = datosServicios.slice(1)
-    .filter(fila => fila[3] === true || fila[3] === "TRUE")
+    .filter(fila => fila[3] === true || String(fila[3]).trim().toUpperCase() === "TRUE")
     .map(fila => fila[0] + " - " + fila[1]);
 
-  // --- ACTUALIZAR FORMULARIO ---
-  //obtiene todas los elementos (preguntas) del formulario
+  // obtiene todas las preguntas del formulario
   const items = form.getItems();
   
-  //itera cada elemento del formulario
   items.forEach(item => {
-    //obtiene el titulo de cada pregunta
     const titulo = item.getTitle();
-    // si encuentra una pregunta titulada Usuario, la convierte a lista y establece las opciones con ListaUsuarios
     if (titulo === "Usuario") {
       item.asListItem().setChoiceValues(listaUsuarios);
-    // hace lo mismo con Servicio
     } else if (titulo === "Servicio") {
       item.asListItem().setChoiceValues(listaServicios);
+      // asegura que el campo servicio en el formulario no sea obligatorio
+      item.asListItem().setRequired(false);
     }
   });
 
-  //muestra mensaje de confirmación
   SpreadsheetApp.getUi().alert("✅ Formulario actualizado correctamente.");
 }
 
-/** Función que se ejecuta automáticamente 
-cuando se envía el formulario*/
-
-// e contiene los datos del envío
+/** funcion que se ejecuta automaticamente al enviar formulario */
 function alEnviarFormulario(e) {
-  //obtiene la hoja actual
+  // negocio: registrar pagos recibidos desde el formulario de google forms
+  // framework: el disparador automatico inyecta las respuestas en la variable "e"
+  // codigo: ejecucion manual directa o estructura invalida generaba error fatal
+  // resolucion: valida la existencia del evento antes de leer las respuestas
+  if (!e || !e.namedValues) {
+    return;
+  }
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  //obtiene la hoja movimientos
-  const hojaMovimientos = ss.getSheetByName('movimientos');
-  
-  // Asumiendo el orden de tus preguntas: Usuario, Servicio, Monto
-  //obtiene las respuestas del formulario en un objeto clave-valor
+  const hojaMovimientos = ss.getSheetByName("movimientos");
   const respuestas = e.namedValues;
 
-  //extrae los valores de las respuestas
-  const usuarioTexto = respuestas['Usuario'][0];   // "1 - Ander"
-  const servicioTexto = respuestas['Servicio'][0]; // "1 - Youtube"
-  const monto = respuestas['Monto'][0];
-  //crea una fecha actual
+  const usuarioTexto = (respuestas["Usuario"] && respuestas["Usuario"][0]) || "";
+  const servicioTexto = (respuestas["Servicio"] && respuestas["Servicio"][0]) || "";
+  const monto = (respuestas["Monto"] && respuestas["Monto"][0]) || "";
   const fecha = new Date();
   
-  // extrae los strings de ID-Nombre para devolver solo el numero
+  // negocio: el usuario y monto son obligatorios para imputar el pago recibido
+  // framework: al desactivar obligatoriedad en formulario servicio puede llegar vacio
+  // codigo: condicion previa requeria servicioTexto descartando pagos validos
+  // resolucion: solo exige usuario y monto procesando servicio como opcional
+  if (!usuarioTexto || !monto) {
+    return;
+  }
+
   const usuarioId = parseInt(usuarioTexto.split(" - ")[0]);
-  const servicioId = parseInt(servicioTexto.split(" - ")[0]);
+  const servicioId = servicioTexto ? parseInt(servicioTexto.split(" - ")[0]) : null;
   
-  //obtiene datos de la hoja suscripciones
-  const hojaSubs = ss.getSheetByName('suscripciones');
+  const hojaSubs = ss.getSheetByName("suscripciones");
   const datosSubs = hojaSubs.getDataRange().getValues();
   let subId = "";
   
-  // recorre las suscripciones saltando el encabezado
-  //busca coincidencia entre usuario_id y servicio_id
-  // cuando encuentra, guarda el ID de suscripcion y sale del bucle
-  for (let i = 1; i < datosSubs.length; i++) {
-    if (parseInt(datosSubs[i][1]) === usuarioId && parseInt(datosSubs[i][2]) === servicioId) {
-      subId = datosSubs[i][0];
-      break;
+  // si indico servicio busca coincidencia exacta con usuario y servicio
+  if (servicioId !== null && !isNaN(servicioId)) {
+    for (let i = 1; i < datosSubs.length; i++) {
+      if (parseInt(datosSubs[i][1]) === usuarioId && parseInt(datosSubs[i][2]) === servicioId) {
+        subId = datosSubs[i][0];
+        break;
+      }
     }
   }
 
-  // agrega una fila a la tbla de movimientos
-  // Estructura: id, fecha, mes (vacío para pagos), sub_id, tipo, monto, origen
+  // si no indico servicio o no hubo coincidencia usa primer suscripcion del usuario
+  if (subId === "") {
+    for (let i = 1; i < datosSubs.length; i++) {
+      if (parseInt(datosSubs[i][1]) === usuarioId) {
+        subId = datosSubs[i][0];
+        break;
+      }
+    }
+  }
+
+  // inserta fila de pago en la hoja movimientos
   if (subId !== "") {
     hojaMovimientos.appendRow([
-      "", // movimiento_id (se puede autogenerar o dejar vacío)
+      "",
       Utilities.formatDate(fecha, "GMT-6", "dd/MM/yyyy"),
-      "", // El mes no importa para pagos
+      "",
       subId,
       "PAGO",
       monto,
@@ -106,17 +115,10 @@ function alEnviarFormulario(e) {
   }
 }
 
-/**
- * Agrega un menú personalizado en la hoja de cálculo para actualizar manualmente.
- */
-
+/** agrega menu en la hoja de calculo */
 function onOpen() {
-  // obtiene la interfaz de usuario de la hoja
   const ui = SpreadsheetApp.getUi();
-  // crea un menu personalizado
-  ui.createMenu('🛠️ Automatización')
-    // agrega una opcion que ejecuta actualizarFormulario()
-    .addItem('Sincronizar Formulario', 'actualizarFormulario')
-    // lo muestra en la interfaz
+  ui.createMenu("🛠️ Automatización")
+    .addItem("Sincronizar Formulario", "actualizarFormulario")
     .addToUi();
 }

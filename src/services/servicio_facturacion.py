@@ -18,80 +18,88 @@ class ServicioFacturacion:
         self.movimientos_repo = MovimientosRepositorio()
         self.control_repo = ControlRepositorio()
 
-    #genera cargos desde el ultimo mes factuado
+    # genera cargos desde el ultimo mes facturado
     def generar_cargos_retroactivos(self):
-        #obtiene los datos de la tabla control
-        #mes donde inicia la facturación
+        # obtiene los datos de la tabla control
         mes_inicial = self.control_repo.obtener_mes_inicial()
-        #mes actual del sistema
         mes_actual = self.control_repo.obtener_mes_actual()
-        #ultimo mes facturado
         ultimo_mes = self.control_repo.obtener_valor("ultimo_mes_facturado")
 
-        #calcula los meses pendientes de facturar
-        #empieza por el ultimo mes, si esta vacío sigue con el mes inicial y luego con el actual
-        desde = ultimo_mes or mes_inicial or mes_actual
-        #calcula los meses intermedios
-        meses_pendientes = UtilidadesFecha.meses_entre(desde, mes_actual)
+        # negocio: factura todos los periodos adeudados desde el inicio o ultimo cobro
+        # framework: meses_entre() avanza al mes siguiente asumiendo inicio ya cobrado
+        # codigo: si ultimo_mes no existia, se omitia mes_inicial sin ser cobrado
+        # resolucion: incluye mes_inicial si es la primera corrida o avanza si ya existe
+        if ultimo_mes:
+            meses_pendientes = UtilidadesFecha.meses_entre(
+                str(ultimo_mes).strip(), mes_actual
+            )
+        elif mes_inicial:
+            mes_inicio = str(mes_inicial).strip()
+            if mes_inicio <= mes_actual:
+                meses_pendientes = [mes_inicio] + UtilidadesFecha.meses_entre(
+                    mes_inicio, mes_actual
+                )
+            else:
+                meses_pendientes = []
+        else:
+            meses_pendientes = [mes_actual]
 
-        #si no hay meses pendientes, retorna lista vacia
+        # si no hay meses pendientes, retorna lista vacia
         if not meses_pendientes:
-            return [] 
+            print("ℹ️ No hay meses pendientes de facturar.")
+            return []
 
-        #devuelve un diccionario {id: datos}
+        # devuelve un diccionario {id: datos}
         servicios = self.servicios_repo.obtener_servicios()
-        #devuelve una lista de suscripciones activas
-        #retorna:
-        """
-        {'suscripcion_id': 1, 'usuario_id': 1, 'servicio_id': 1, 'activa': 'TRUE'}
-        {'suscripcion_id': 2, 'usuario_id': 2, 'servicio_id': 1, 'activa': 'TRUE'}
-        """
+        # devuelve una lista de suscripciones activas
         suscripciones = self.suscripciones_repo.obtener_suscripciones_activas()
 
-        #lista para acumular los cargos a insertar
+        # negocio: asociar cada suscripcion con su respectivo servicio comercial
+        # framework: gspread puede devolver enteros o cadenas segun el formato de celda
+        # codigo: discordancia de tipo entre id entero y cadena devolvia None
+        # resolucion: indexa servicios por clave en texto y valida activo flexiblemente
+        servicios_por_id = {str(k).strip(): v for k, v in servicios.items()}
+
+        # lista para acumular los cargos a insertar
         filas = []
-        #por cada mes pendiente ej: '2024-05', '2024-06'
+        # por cada mes pendiente ej: "2024-05", "2024-06"
         for mes in meses_pendientes:
-            #recorremos las suscripciones activas
             for sub in suscripciones:
-                #busca el servicio correspondiente a esta suscripción
-                servicio = servicios.get(sub["servicio_id"])
-                
-                #solo generamos cargo si el servicio existe Y está activo
-                #(La suscripción ya viene filtrada por 'obtener_suscripciones_activas')
-                if not servicio or not servicio.get("activa"):
-                    #salta a la siguiente
+                sub_srv_id = str(sub.get("servicio_id", "")).strip()
+                servicio = servicios_por_id.get(sub_srv_id)
+
+                if not servicio:
                     continue
 
-                #crea una fila para insertar en la tabla de movimientos
+                valor_activa = servicio.get("activa", servicio.get("activo", ""))
+                es_activo = (
+                    str(valor_activa).strip().upper() in ["TRUE", "VERDADERO", "1"]
+                    or valor_activa is True
+                )
+                if not es_activo:
+                    continue
+
                 filas.append([
-                    #id vacío (no necesario)
-                    "", 
-                    #fecha de creacion del cargo
+                    "",
                     date.today().isoformat(),
-                    #mes que se esta facturando
                     mes,
-                    #id de la suscripcion
-                    sub["suscripcion_id"],
-                    #tipo de movimiento
+                    sub.get("suscripcion_id"),
                     "CARGO",
-                    #monto del servicio
-                    servicio["costo"],
-                    #origen /creado por el script
-                    "SCRIPT"
+                    servicio.get("costo"),
+                    "SCRIPT",
                 ])
 
-        #si se generaron cargos
+        # si se generaron cargos
         if filas:
-            #inserta en tabla de movimientos
             self.movimientos_repo.insertar_cargos(filas)
-            #actualiza el ultimo mes facturado en la tabla control
-            self.control_repo.actualizar_valor("ultimo_mes_facturado", meses_pendientes[-1])
+            self.control_repo.actualizar_valor(
+                "ultimo_mes_facturado", meses_pendientes[-1]
+            )
+            self.control_repo.actualizar_valor("mes_actual", mes_actual)
             print(f"✅ Cargos generados exitosamente hasta el mes: {meses_pendientes[-1]}")
         else:
             print("ℹ️ No se generaron nuevos cargos en esta ejecución.")
 
-        #retorna las filas generadas
         return filas
     
 """

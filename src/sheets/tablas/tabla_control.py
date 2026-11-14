@@ -34,26 +34,29 @@ class ControlRepositorio:
     def obtener_mes_inicial(self):
         return self.obtener_valor("mes_inicial")
 
-    #usa el metodo obtener_valor para buscar el mes actual,
-    #si no existe usa la fecha actual y formateamos %Y-%m para que devuelva "2025-12"
     def obtener_mes_actual(self):
-        mes_actual = self.obtener_valor("mes_actual") or date.today().strftime("%Y-%m")
-        return mes_actual
-
+        # negocio: el cobro debe calcularse contra el periodo en curso real
+        # framework: google sheets conserva valores de texto estaticos en celdas
+        # codigo: si "mes_actual" tenia texto antiguo, impedia usar la fecha de hoy
+        # resolucion: compara con el reloj del sistema y prioriza el mes mas reciente
+        mes_real = date.today().strftime("%Y-%m")
+        mes_hoja = self.obtener_valor("mes_actual")
+        if not mes_hoja:
+            return mes_real
+        mes_limpio = str(mes_hoja).strip()
+        if len(mes_limpio) != 7 or "-" not in mes_limpio or mes_limpio < mes_real:
+            return mes_real
+        return mes_limpio
     
     def actualizar_valor(self, clave: str, nuevo_valor: str):
-        """
-        Busca la fila de la clave y actualiza su valor en Google Sheets
-        """
+        # negocio: sincroniza el estado de ejecucion para no duplicar ni perder cobros
+        # framework: gspread indexa filas iniciando en 1 donde la fila 1 es encabezado
+        # codigo: si la clave no existia retornaba "false" y no persistia el avance
+        # resolucion: busca fila con limpieza de espacios o agrega fila si no existe
         registros = self.ws.get_all_records()
         for i, reg in enumerate(registros):
-            if reg.get("clave") == clave:
-                """
-                gspread indexa desde 1, donde la fila 1 sería el encabezado,
-                por eso empezamos desde i+2
-                
-                donde en update_cell(fila,columna,valor)
-                """
+            if str(reg.get("clave", "")).strip() == clave:
                 self.ws.update_cell(i + 2, 2, nuevo_valor) 
                 return True
-        return False
+        self.ws.append_row([clave, nuevo_valor, ""])
+        return True

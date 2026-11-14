@@ -60,7 +60,14 @@ class ServicioMensaje:
         }
         
         """
-        suscripciones_map = {s["suscripcion_id"]: s for s in self.suscripciones_repo.ws.get_all_records()}
+        # negocio: asegurar lectura de suscripciones sin fallos por tipo de dato
+        # framework: gspread puede devolver enteros o texto segun formato en hojas
+        # codigo: discordancia entre clave entera y texto omitia imputacion del pago
+        # resolucion: indexa suscripciones con clave de texto para acceso uniforme
+        suscripciones_map = {
+            str(s["suscripcion_id"]).strip(): s
+            for s in self.suscripciones_repo.ws.get_all_records()
+        }
         #Diccionario {id_servicio: {datos_suscripcion}}
         servicios_map = self.servicios_repo.obtener_servicios()
         #lista de todos los movimientos de la tabla movimientos
@@ -81,7 +88,7 @@ class ServicioMensaje:
         
         for mov in movimientos:
             #busca la suscripcion relacionada con este movimeiento
-            sub = suscripciones_map.get(mov["suscripcion_id"])
+            sub = suscripciones_map.get(str(mov.get("suscripcion_id", "")).strip())
             #sino existe suscripcion la salta
             if not sub: continue
             
